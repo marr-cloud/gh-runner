@@ -18,8 +18,7 @@ on:
 env:
   # Establecer repositorio de Docker Hub como predeterminado
   REGISTRY: docker.io
-  # github.repository como <cuenta>/<repo>
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: meitrix8208/gh-runner
 
 jobs:
   check-tags:
