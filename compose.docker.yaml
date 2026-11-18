@@ -1,0 +1,20 @@
+# Override for jobs that need Docker (docker build, container actions, ...).
+# It uses the host's Docker daemon through its socket, which is equivalent to
+# root on the host: only use it with trusted repositories.
+#
+#   export DOCKER_GID=$(stat -c %g /var/run/docker.sock)
+#   sudo install -d -o 1001 -g 1001 /tmp/runners
+#   docker compose -f compose.yaml -f compose.docker.yaml up -d --scale runner=4
+services:
+  runner:
+    image: ${RUNNER_IMAGE:-meitrix8208/gh-runner:noble-docker}
+    group_add:
+      - "${DOCKER_GID:?set DOCKER_GID, e.g. export DOCKER_GID=$(stat -c %g /var/run/docker.sock)}"
+    environment:
+      # Docker resolves bind-mount paths on the HOST, so the work directory
+      # must exist at the same path inside and outside the container. ghr
+      # appends the runner name, giving each replica its own subdirectory.
+      RUNNER_WORKDIR_ROOT: /tmp/runners
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/runners:/tmp/runners

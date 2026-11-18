@@ -1,0 +1,5 @@
+*
+!go.mod
+!cmd/
+!slices/
+cmd/**/*_test.go

@@ -1,0 +1,4 @@
+/ghr
+/dist/
+*.test
+.env

@@ -1,0 +1,33 @@
+# Self-hosted GitHub Actions runners, scalable out of the box:
+#
+#   docker compose up -d                      # RUNNERS replicas (default 1)
+#   docker compose up -d --scale runner=5     # or scale on the command line
+#
+# Each replica registers under its own name (<RUNNER_NAME>-<container id>), so
+# no container_name, ports, or per-replica volumes are involved.
+# Copy .env.example to .env and fill it in.
+name: gh-runner
+
+services:
+  runner:
+    image: ${RUNNER_IMAGE:-meitrix8208/gh-runner:noble}
+    init: true                      # reaps processes orphaned by workflow steps
+    restart: ${RESTART_POLICY:-unless-stopped}
+    scale: ${RUNNERS:-1}
+    stop_grace_period: 2m           # lets a running job cancel and the runner deregister
+    environment:
+      # --- where to register (set the ones for your scope) ---------------
+      RUNNER_SCOPE: ${RUNNER_SCOPE:-org}          # org | repo | enterprise
+      ORG_NAME: ${ORG_NAME:-}
+      REPO_URL: ${REPO_URL:-}
+      ENTERPRISE_NAME: ${ENTERPRISE_NAME:-}
+      # --- how to authenticate (pick one; see docs/Authentication.md) ----
+      ACCESS_TOKEN: ${ACCESS_TOKEN:-}
+      APP_ID: ${APP_ID:-}
+      APP_PRIVATE_KEY: ${APP_PRIVATE_KEY:-}
+      # --- runner behaviour -----------------------------------------------
+      RUNNER_NAME: ${RUNNER_NAME:-gh-runner}
+      LABELS: ${LABELS:-}
+      RUNNER_GROUP: ${RUNNER_GROUP:-}
+      EPHEMERAL: ${EPHEMERAL:-true}               # one job per container, then a fresh one
+      GHR_DRY_RUN: ${GHR_DRY_RUN:-}               # "true" prints the resolved config and exits

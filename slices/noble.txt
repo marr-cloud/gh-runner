@@ -1,0 +1,37 @@
+# Slices (pkg_slice) cut from the Ubuntu archive with chisel.
+# Keep this list as small as the workflows you run allow: every line is
+# attack surface and megabytes. Add what your jobs need and rebuild.
+
+# --- filesystem skeleton, OS identity, users, TLS, time zones, DNS ---
+base-files_base
+base-files_release-info
+base-passwd_data
+libc6_libs
+libc-bin_nsswitch
+ca-certificates_data
+openssl_config
+tzdata_zoneinfo
+
+# --- what the .NET runner and the bundled Node need ---
+libgcc-s1_libs
+libstdc++6_libs
+zlib1g_libs
+libssl3t64_libs
+libicu74_libs
+
+# --- shell and tools that workflow steps and common actions expect ---
+bash_bins
+dash_bins
+coreutils_bins
+grep_bins
+sed_bins
+findutils_bins
+tar_bins
+gzip_bins
+unzip_bins
+curl_bins
+jq_bins
+git_bins
+git_http-support
+openssh-client_bins
+openssh-client_config
