@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -51,6 +52,14 @@ type Supervisor struct {
 func (s *Supervisor) Run(ctx context.Context, sigs <-chan os.Signal) int {
 	cfg := s.cfg
 	if err := os.MkdirAll(cfg.Workdir, 0o755); err != nil {
+		if errors.Is(err, fs.ErrPermission) {
+			// Typically a bind mount that Docker created as root.
+			parent := filepath.Dir(cfg.Workdir)
+			s.log.Error("create workdir", "dir", cfg.Workdir, "err", err,
+				"hint", fmt.Sprintf("%s must be writable by uid %d; on the host run: sudo install -d -o %d -g %d %s",
+					parent, os.Getuid(), os.Getuid(), os.Getgid(), parent))
+			return 1
+		}
 		s.log.Error("create workdir", "dir", cfg.Workdir, "err", err)
 		return 1
 	}

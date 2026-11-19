@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"testing"
@@ -235,6 +236,35 @@ func TestConfigureFailureReturnsItsExitCode(t *testing.T) {
 	s := newSupervisor(t, dir, baseCfg(), srv, logDir)
 	if code := s.Run(context.Background(), make(chan os.Signal)); code != 5 {
 		t.Fatalf("exit code = %d, want 5", code)
+	}
+}
+
+func TestUnwritableWorkdirExplainsTheFix(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("root ignores directory permissions")
+	}
+	logDir := t.TempDir()
+	dir := fakeRunner(t, "exit 0")
+	srv := apiServer(t)
+	defer srv.Close()
+	root := filepath.Join(t.TempDir(), "runners")
+	if err := os.Mkdir(root, 0o555); err != nil { // like a bind mount Docker created as root
+		t.Fatal(err)
+	}
+	cfg := baseCfg()
+	cfg.Workdir = filepath.Join(root, "r-1")
+	s := newSupervisor(t, dir, cfg, srv, logDir)
+	var buf strings.Builder
+	s.log = slog.New(slog.NewTextHandler(&buf, nil))
+
+	if code := s.Run(context.Background(), make(chan os.Signal)); code != 1 {
+		t.Fatalf("exit code = %d, want 1", code)
+	}
+	out := buf.String()
+	for _, want := range []string{"uid " + strconv.Itoa(os.Getuid()), "install -d -o " + strconv.Itoa(os.Getuid()), root} {
+		if !strings.Contains(out, want) {
+			t.Errorf("log should mention %q:\n%s", want, out)
+		}
 	}
 }
 

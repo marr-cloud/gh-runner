@@ -17,4 +17,10 @@ services:
       RUNNER_WORKDIR_ROOT: /tmp/runners
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /tmp/runners:/tmp/runners
+      # Must exist and be owned by uid 1001 (see above). Without
+      # create_host_path: false Docker would create it as root, unwritable.
+      - type: bind
+        source: /tmp/runners
+        target: /tmp/runners
+        bind:
+          create_host_path: false
