@@ -6,6 +6,8 @@
 
 **Runners show up Offline after `docker compose down`.** The container was killed before it could deregister. Keep `stop_grace_period: 2m`. Stale entries can be deleted in GitHub; `--replace` handles re-registration under the same name.
 
+**Runners named `GitHub Actions 123...-<id>`.** You ran `docker compose` from inside a GitHub Actions job (a deploy workflow, for example). The runner running that job exports `RUNNER_NAME`, and Compose reads the shell before `.env`. Set `RUNNER_NAME` explicitly in that step's `env:`.
+
 **Two runners with the same name / `Session conflict`.** Do not set `RUNNER_NAME_SUFFIX=none` with more than one replica.
 
 **`docker: permission denied` in a job.** `DOCKER_GID` does not match the socket's group. Check `stat -c %g /var/run/docker.sock`.

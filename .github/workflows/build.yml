@@ -157,6 +157,9 @@ jobs:
           REPO_URL: https://github.com/o/r
           ACCESS_TOKEN: x
           RUNNER_SCOPE: repo
+          # The hosted runner exports its own RUNNER_NAME ("GitHub Actions N"),
+          # which compose.yaml would otherwise pick up.
+          RUNNER_NAME: gh-runner
         run: |
           set -euo pipefail
           docker compose up --scale runner=3
