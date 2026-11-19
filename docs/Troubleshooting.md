@@ -10,6 +10,10 @@
 
 **`docker: permission denied` in a job.** `DOCKER_GID` does not match the socket's group. Check `stat -c %g /var/run/docker.sock`.
 
+**`create workdir ... permission denied`, container restarting.** The work directory's parent is not writable by uid 1001, usually a bind mount Docker created as root. The log's `hint` gives the exact `install -d` command to run on the host.
+
+**`bind source path does not exist: /tmp/runners`.** Create it first; see [Docker jobs](Docker-jobs).
+
 **Container actions fail to mount the workspace.** The work directory must exist at the same path on the host and in the container; see [Docker jobs](Docker-jobs).
 
 **A job needs a tool that is not installed.** Add its slice or use a different base; see [Building and extending](Building-and-extending).
@@ -18,5 +22,6 @@
 
 ## Known limitations
 
-- No Kerberos libraries are included; Kerberos/NTLM-authenticated proxies are not supported.
-- The runner's self-update path (exit codes 3 and 4) is handled but depends on the update script finishing in 30 seconds; prefer `DISABLE_AUTO_UPDATE=true` with weekly image refreshes.
+- On `noble` no Kerberos libraries are included, so Kerberos/NTLM-authenticated proxies are not supported (`resolute` ships them with curl).
+- The runner's self-update path (exit codes 3 and 4) is handled like `run-helper.sh` does, waiting up to 30 seconds for the update script. An update lives only in the container's writable layer and is lost on the next container, so prefer `DISABLE_AUTO_UPDATE=true` with weekly image refreshes.
+- `git` has no hook templates (`warning: templates not found` on `git init`); harmless.

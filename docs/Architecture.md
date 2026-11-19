@@ -47,6 +47,13 @@ GitHub requires runners to stay reasonably current, and by default the runner do
 /_work                      default work root
 /opt/hostedtoolcache        tool cache for setup-* actions
 /usr/bin/{bash,git,curl,..} chiselled Ubuntu packages (see slices/)
+/usr/lib/git-core/git-submodule, git-sh-setup, git-sh-i18n
+                            from the release's git package: no slice ships
+                            them and actions/checkout needs `git submodule`
+/var/lib/dpkg/status.d/     one record per package, for scanners (see Security)
+/var/lib/chisel/            chisel's manifest
 ```
+
+The rootfs is assembled in an `ubuntu:<release>` stage on the build platform: chisel downloads and verifies packages for the target architecture, so arm64 images build without emulation.
 
 The runner tarball is 683 MB extracted; the image keeps about 300 MB of it (about 200 MB without Node 20) by dropping the musl/Alpine Node builds, npm and corepack, Node headers, and the shell wrappers.
