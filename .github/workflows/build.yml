@@ -135,7 +135,7 @@ jobs:
           docker run --rm --entrypoint /actions-runner/externals/node24/bin/node "$IMG" -e 'console.log(process.version)'
           # Tools, DNS and TLS trust:
           docker run --rm --entrypoint /usr/bin/bash "$IMG" -ec \
-            'git --version; curl --version | head -1; jq --version; tar --version | head -1; sh -c "echo sh ok"; curl -fsS https://api.github.com/zen; echo; git ls-remote https://github.com/actions/runner HEAD'
+            'git --version; curl --version | head -1; jq --version; tar --version | head -1; sh -c "echo sh ok"; curl -fsS -o /dev/null -w "%{http_code} %{ssl_verify_result}\n" https://github.com; git ls-remote https://github.com/actions/runner HEAD'
           # actions/checkout runs `git submodule foreach` on every checkout:
           docker run --rm --entrypoint /usr/bin/bash "$IMG" -ec \
             'cd /tmp && git init -q t && cd t && git submodule foreach true && echo "git submodule ok"'
@@ -157,9 +157,6 @@ jobs:
           REPO_URL: https://github.com/o/r
           ACCESS_TOKEN: x
           RUNNER_SCOPE: repo
-          # The hosted runner exports its own RUNNER_NAME ("GitHub Actions N"),
-          # which compose.yaml would otherwise pick up.
-          RUNNER_NAME: gh-runner
         run: |
           set -euo pipefail
           docker compose up --scale runner=3

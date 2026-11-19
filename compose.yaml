@@ -32,7 +32,8 @@ services:
       APP_ID: ${APP_ID:-}
       APP_PRIVATE_KEY: ${APP_PRIVATE_KEY:-}
       # --- runner behaviour -----------------------------------------------
-      RUNNER_NAME: ${RUNNER_NAME:-gh-runner}
+      # RUNNER_NAME (default gh-runner) comes only from .env: GitHub Actions
+      # exports its own RUNNER_NAME, which must not leak in from the shell.
       LABELS: ${LABELS:-}
       RUNNER_GROUP: ${RUNNER_GROUP:-}
       EPHEMERAL: ${EPHEMERAL:-true}               # one job per container, then a fresh one
