@@ -90,12 +90,13 @@ esac
 mkdir /rootfs
 chisel cut --release "${release}" --arch "${TARGETARCH}" --root /rootfs \
   $(grep -v '^[[:space:]]*#' /slices.txt | grep -v '^[[:space:]]*$')
-# /bin/sh for `run:` steps that use it, then the unprivileged runner user.
-ln -s dash /rootfs/usr/bin/sh
+# /bin/sh -> dash comes from dash_bins. Add the unprivileged runner user.
 echo 'runner:x:1001:1001:runner:/home/runner:/bin/bash' >> /rootfs/etc/passwd
 echo 'runner:x:1001:'                                   >> /rootfs/etc/group
-mkdir -p /rootfs/home/runner /rootfs/_work /rootfs/opt/hostedtoolcache
-chown 1001:1001 /rootfs/home/runner /rootfs/_work /rootfs/opt/hostedtoolcache
+# /actions-runner must exist here: COPY --from creates a missing destination
+# directory as root, and the runner writes _diag/, .runner, ... into it.
+mkdir -p /rootfs/home/runner /rootfs/_work /rootfs/opt/hostedtoolcache /rootfs/actions-runner
+chown 1001:1001 /rootfs/home/runner /rootfs/_work /rootfs/opt/hostedtoolcache /rootfs/actions-runner
 chmod 1777 /rootfs/tmp
 EOF
 
