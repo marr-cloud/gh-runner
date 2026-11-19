@@ -5,6 +5,8 @@
 # --- filesystem skeleton, OS identity, users, TLS, time zones, DNS ---
 base-files_base
 base-files_release-info
+# /var/lib/chisel manifest: lets scanners (trivy, grype...) see the packages
+base-files_chisel
 base-passwd_data
 libc6_libs
 libc-bin_nsswitch

@@ -74,10 +74,14 @@ chown -R 1001:1001 /actions-runner
 EOF
 
 # ------------------------------------------------------------- rootfs ------
-# Cut the Ubuntu packages we need into /rootfs and add the runner user.
-FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS rootfs
+# Cut the Ubuntu packages we need into /rootfs, add the runner user, and
+# record what was installed so image scanners can see it. Runs on the build
+# platform: chisel fetches packages for TARGETARCH without emulation.
+FROM --platform=$BUILDPLATFORM ubuntu:${UBUNTU_RELEASE} AS rootfs
 ARG UBUNTU_RELEASE
 ARG TARGETARCH
+RUN apt-get update -qq \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends ca-certificates jq zstd >/dev/null
 COPY --from=chisel /out/chisel /usr/local/bin/chisel
 COPY slices/${UBUNTU_RELEASE}.txt /slices.txt
 RUN <<'EOF'
@@ -90,6 +94,35 @@ esac
 mkdir /rootfs
 chisel cut --release "${release}" --arch "${TARGETARCH}" --root /rootfs \
   $(grep -v '^[[:space:]]*#' /slices.txt | grep -v '^[[:space:]]*$')
+
+# `git submodule` is a shell script that no chisel slice ships, and
+# actions/checkout runs it on every checkout. Take it and the two shell
+# libraries it sources from the release's signed git package (they are
+# architecture-independent).
+cd /tmp && apt-get download -qq git && dpkg-deb -x git_*.deb /tmp/git
+for f in git-submodule git-sh-setup git-sh-i18n; do
+  cp -a "/tmp/git/usr/lib/git-core/$f" /rootfs/usr/lib/git-core/
+done
+
+# Scanners (trivy, grype, syft) do not read chisel's manifest. Describe each
+# package in /var/lib/dpkg/status.d/, the format distroless images use. The
+# Source field maps binary packages to Ubuntu security notices.
+mkdir -p /rootfs/var/lib/dpkg/status.d
+zstd -dc /rootfs/var/lib/chisel/manifest.wall \
+  | jq -r 'select(.kind == "package") | "\(.name) \(.version) \(.arch)"' \
+  | while read -r name version arch; do
+      src=$(apt-cache show "${name}=${version}" 2>/dev/null | sed -n 's/^Source: //p' | head -1)
+      [ -n "${src}" ] || src=$(apt-cache show "${name}" 2>/dev/null | sed -n 's/^Source: //p' | head -1)
+      {
+        echo "Package: ${name}"
+        echo "Status: install ok installed"
+        [ -z "${src}" ] || echo "Source: ${src}"
+        echo "Version: ${version}"
+        echo "Architecture: ${arch}"
+      } > "/rootfs/var/lib/dpkg/status.d/${name}"
+    done
+test -n "$(ls /rootfs/var/lib/dpkg/status.d)"
+
 # /bin/sh -> dash comes from dash_bins. Add the unprivileged runner user.
 echo 'runner:x:1001:1001:runner:/home/runner:/bin/bash' >> /rootfs/etc/passwd
 echo 'runner:x:1001:'                                   >> /rootfs/etc/group

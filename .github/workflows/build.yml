@@ -136,6 +136,12 @@ jobs:
           # Tools, DNS and TLS trust:
           docker run --rm --entrypoint /usr/bin/bash "$IMG" -ec \
             'git --version; curl --version | head -1; jq --version; tar --version | head -1; sh -c "echo sh ok"; curl -fsS https://api.github.com/zen; echo; git ls-remote https://github.com/actions/runner HEAD'
+          # actions/checkout runs `git submodule foreach` on every checkout:
+          docker run --rm --entrypoint /usr/bin/bash "$IMG" -ec \
+            'cd /tmp && git init -q t && cd t && git submodule foreach true && echo "git submodule ok"'
+          # Package metadata, so scanners can see the Ubuntu packages:
+          docker run --rm --entrypoint /usr/bin/bash "$IMG" -ec \
+            'test -s /var/lib/chisel/manifest.wall; n=$(ls /var/lib/dpkg/status.d | wc -l); echo "$n packages recorded"; test "$n" -ge 20; grep -q "^Source: openssl" /var/lib/dpkg/status.d/libssl3t64'
           if [ "${{ matrix.target }}" = docker ]; then
             docker run --rm --entrypoint /usr/local/bin/docker "$IMG" --version
           fi
