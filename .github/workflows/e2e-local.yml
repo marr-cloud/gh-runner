@@ -1,0 +1,29 @@
+name: e2e (local runner)
+
+# Temporary: exercised by a locally started gh-runner container labelled
+# ghr-e2e. Removed before merging.
+on:
+  push:
+    branches: [rewrite/go-chiseled]
+    paths: ['.github/workflows/e2e-local.yml']
+
+jobs:
+  e2e:
+    runs-on: [self-hosted, ghr-e2e]
+    steps:
+      - uses: actions/checkout@v4
+      - name: tools
+        run: |
+          set -eux
+          id
+          git --version; jq --version; curl --version | head -1
+          sh -c 'echo sh ok'
+          test -z "${ACCESS_TOKEN:-}" && echo "ACCESS_TOKEN scrubbed"
+          ls Dockerfile go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node -e 'console.log("node", process.version)'
+      - name: docker (only on -docker images)
+        run: |
+          if command -v docker >/dev/null; then docker version --format '{{.Server.Version}}'; docker run --rm hello-world | head -2; else echo "no docker CLI"; fi
